@@ -26,6 +26,8 @@ std::string getTitle(float fps = -1)
 
 bool RaycastGrid(const Ray &ray, const Grid &grid, GridHit &hit, float maxDistance = 100.0f);
 
+void updateTile(Tile &tile, const Grid &grid);
+
 int main() 
 {
 	const int screenWidth = 1280;
@@ -114,6 +116,25 @@ int main()
 			{
 				for(int z = 0; z < voxelGrid.getDepth(); z++)
 				{
+					if(voxelGrid.inBounds(x, y - 1, z))
+					{
+						if(voxelGrid.isEmpty(x, y - 1, z))
+						{
+							Tile tile;
+							voxelGrid.setEmpty(x, y, z);
+							voxelGrid.setTile(x, y - 1, z, tile);
+						}
+					}
+				}
+			}
+		}
+
+		for(int x = 0; x < voxelGrid.getWidth(); x++)
+		{
+			for(int y = 0; y < voxelGrid.getHeight(); y++)
+			{
+				for(int z = 0; z < voxelGrid.getDepth(); z++)
+				{
 					if(!voxelGrid.isEmpty(x, y, z))
 					{
 						DrawCube((Vector3){x, y, z}, 1.0f, 1.0f, 1.0f, BLUE);
@@ -122,7 +143,6 @@ int main()
 				}
 			}
 		}
-
 
 
 		DrawRay(ray, MAROON);
@@ -261,4 +281,3 @@ bool RaycastGrid(const Ray &ray, const Grid &grid, GridHit &hit, float maxDistan
 	return false;
 
 }
-
