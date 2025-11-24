@@ -57,6 +57,9 @@ int main()
 			voxelGrid.setTile(x, 0, z, groundTile);
 
 
+    const float PHYSICS_STEP = 0.1f; // seconds per physics update
+    float physicsAccumulator = 0.0f;
+
 	while (!WindowShouldClose())
 	{
 		if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -90,6 +93,32 @@ int main()
 
 		}
 
+		float dt = GetFrameTime(); // time since last frame
+        physicsAccumulator += dt;
+		while (physicsAccumulator >= PHYSICS_STEP)
+		{
+			for(int x = 0; x < voxelGrid.getWidth(); x++)
+			{
+				for(int y = 0; y < voxelGrid.getHeight(); y++)
+				{
+					for(int z = 0; z < voxelGrid.getDepth(); z++)
+					{
+						if(voxelGrid.inBounds(x, y - 1, z))
+						{
+							if(voxelGrid.isEmpty(x, y - 1, z) && !voxelGrid.isEmpty(x, y, z))
+							{
+								Tile tile;
+								voxelGrid.setEmpty(x, y, z);
+								voxelGrid.setTile(x, y - 1, z, tile);
+							}
+						}
+					}
+				}
+			}
+			physicsAccumulator -= PHYSICS_STEP;
+		}
+		
+
 
 		BeginDrawing();
 
@@ -110,24 +139,7 @@ int main()
 			DrawCubeWires(cubePosition, cubeSize.x, cubeSize.y, cubeSize.z, DARKGRAY);
 		}*/
 
-		for(int x = 0; x < voxelGrid.getWidth(); x++)
-		{
-			for(int y = 0; y < voxelGrid.getHeight(); y++)
-			{
-				for(int z = 0; z < voxelGrid.getDepth(); z++)
-				{
-					if(voxelGrid.inBounds(x, y - 1, z))
-					{
-						if(voxelGrid.isEmpty(x, y - 1, z))
-						{
-							Tile tile;
-							voxelGrid.setEmpty(x, y, z);
-							voxelGrid.setTile(x, y - 1, z, tile);
-						}
-					}
-				}
-			}
-		}
+
 
 		for(int x = 0; x < voxelGrid.getWidth(); x++)
 		{
