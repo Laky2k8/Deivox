@@ -49,6 +49,12 @@ int main()
 	Grid voxelGrid = Grid(16, 16, 16);
 
 
+	Tile groundTile; // default tile (fill it the way your Tile constructor expects)
+	for (int x = 0; x < voxelGrid.getWidth(); ++x)
+		for (int z = 0; z < voxelGrid.getDepth(); ++z)
+			voxelGrid.setTile(x, 0, z, groundTile);
+
+
 	while (!WindowShouldClose())
 	{
 		if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -67,9 +73,12 @@ int main()
 			}*/
 
 			ray = GetScreenToWorldRay(GetMousePosition(), camera);
+			std::cout << "Ray Origin: (" << ray.position.x << ", " << ray.position.y << ", " << ray.position.z << ")\n";
 
 			if(RaycastGrid(ray, voxelGrid, hit, 100.0f))
 			{
+				std::cout << "Hit at: (" << hit.currHit.x << ", " << hit.currHit.y << ", " << hit.currHit.z << ")\n";
+
 				Tile tile;
 
 				voxelGrid.setTile(hit.prevHit.x, hit.prevHit.y, hit.prevHit.z, tile);
