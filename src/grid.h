@@ -20,14 +20,16 @@ class Grid
        		return y * width + x + z * width * height;
 		}
 
-		bool inBounds(int x, int y, int z) const
-		{
-			return x>=0 && x<width && y>=0 && y<height && z>=0 && z<depth;
-		}
-
 	public:
 
 		Grid(int w, int h, int d) : width(w), height(h), depth(d), grid(w * h * d, std::nullopt) {}
+
+		bool inBounds(int x, int y, int z) const
+		{
+			return  (x >= 0 && x < this->width) && 
+					(y >= 0 && y < this->height) && 
+					(z >= 0 && z < this->depth);
+		}
 
 		int getWidth()
 		{
@@ -68,11 +70,18 @@ class Grid
 			b = temp;
 		}
 
-		bool isEmpty(int x, int y, int z)
+		bool isEmpty(int x, int y, int z) const
 		{
 			if(!inBounds(x,y,z)) return true;
 
 			return grid[idx(x, y, z)] == std::nullopt;
 		}
 	
+};
+
+// GridHit for block placing and breaking
+struct GridHit
+{
+	Vector3 currHit;
+	Vector3 prevHit;
 };

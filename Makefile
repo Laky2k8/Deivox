@@ -2,7 +2,7 @@
 # -------------------------------------
 
 # Define variables
-CXX = g++
+CXX = C:\Users\Bence\Documents\winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r1\mingw64\bin\g++.exe
 INCLUDE = -Iinclude -Llib
 SRC = $(wildcard src/*.cpp src/glad.c src/*.h src/*.hpp) 
 LIBS = -lraylib -lopengl32 -lgdi32 -lwinmm 

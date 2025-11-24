@@ -24,7 +24,7 @@ std::string getTitle(float fps = -1)
 	}
 }
 
-bool RaycastGrid(const Ray &ray, const Grid )
+bool RaycastGrid(const Ray &ray, const Grid &grid, GridHit &hit, float maxDistance = 100.0f);
 
 int main() 
 {
@@ -44,12 +44,9 @@ int main()
 	Vector3 cubeSize = { 2.0f, 2.0f, 2.0f };
 
 	Ray ray = { 0 };
+	GridHit hit;
 
 	Grid voxelGrid = Grid(16, 16, 16);
-	Vector3 hitPoint = { 0 };
-	bool anyHit = false;
-	float closestHit = FLT_MAX;
-	int hitX = -1, hitY = -1, hitZ = -1;
 
 
 	while (!WindowShouldClose())
@@ -71,49 +68,14 @@ int main()
 
 			ray = GetScreenToWorldRay(GetMousePosition(), camera);
 
-			closestHit = FLT_MAX;
-			hitX = -1, hitY = -1, hitZ = -1;
-			hitPoint = { 0 };
-			anyHit = false;
-
-			for(int x = 0; x < voxelGrid.getWidth(); x++)
+			if(RaycastGrid(ray, voxelGrid, hit, 100.0f))
 			{
-				for(int y = 0; y < voxelGrid.getHeight(); y++)
-				{
-					for(int z = 0; z < voxelGrid.getDepth(); z++)
-					{
+				Tile tile;
 
-						if (voxelGrid.isEmpty(x,y,z) && y > 1) continue;
-
-						BoundingBox box;
-						box.min = (Vector3){ x - 0.5f, y - 0.5f, z - 0.5f };
-						box.max = (Vector3){ x + 0.5f, y + 0.5f, z + 0.5f };
-
-						RayCollision rc = GetRayCollisionBox(ray, box);
-
-						if(rc.hit && rc.distance < closestHit)
-						{
-							closestHit = rc.distance;
-							anyHit = true;
-							hitX = x; hitY = y; hitZ = z;
-
-							hitPoint = Vector3Add(ray.position, Vector3Scale(ray.direction, rc.distance));
-
-							int gx = (int)roundf(hitPoint.x);
-							int gy = (int)roundf(hitPoint.y);
-							int gz = (int)roundf(hitPoint.z);
-
-
-							if(voxelGrid.isEmpty(gx, gy, gz))
-							{
-								Tile tile = Tile();
-								voxelGrid.setTile(gx, gy, gz, tile);
-							}
-						}
-					}
-				}
+				voxelGrid.setTile(hit.prevHit.x, hit.prevHit.y, hit.prevHit.z, tile);
+				// hit.currHit is the first OCCUPIED voxel
+				// hit.prevHit is the actual empty tile we want to modify
 			}
-
 
 		}
 
@@ -162,11 +124,6 @@ int main()
 
 
 		DrawText(getTitle(GetFPS()).c_str(), 20, 20, 20, BLACK);
-		
-		if(anyHit)
-		{
-			DrawText(("Ray 3D pos:\n x:" + to_string(hitPoint.x) + " y:" + to_string(hitPoint.y) + " z:" + to_string(hitPoint.z)).c_str(), 20, 50, 20, DARKGRAY);
-		}
 
 		EndDrawing();
 
@@ -176,5 +133,123 @@ int main()
 
 	CloseWindow();
 	return 0;
+}
+
+
+bool RaycastGrid(const Ray &ray, const Grid &grid, GridHit &hit, float maxDistance)
+{
+	Vector3 dir = Vector3Normalize(ray.direction);
+
+	// starting voxel
+	Vector3 start = ray.position;
+
+	int x = (int)floorf(start.x);
+	int y = (int)floorf(start.y);
+	int z = (int)floorf(start.z);
+
+	// if starting outside grid: step until we enter or go further than the max dist
+	int stepX = (dir.x > 0) ? 1 : -1;
+	int stepY = (dir.y > 0) ? 1 : -1;
+	int stepZ = (dir.z > 0) ? 1 : -1;
+
+	float tMaxX, tMaxY, tMaxZ;
+	float tDeltaX, tDeltaY, tDeltaZ;
+
+	if(dir.x == 0.0f)
+	{
+		tMaxX = FLT_MAX;
+		tDeltaX = FLT_MAX;
+	}
+	else
+	{
+		float vx = (float)floorf(start.x);
+		float distToBoundaryX = (dir.x > 0) ? (vx + 1.0f - start.x) : (start.x - vx);
+		tMaxX = distToBoundaryX / fabsf(dir.x);
+		tDeltaX = 1.0f / fabsf(dir.x);
+	}
+
+	if(dir.y == 0.0f)
+	{
+		tMaxY = FLT_MAX;
+		tDeltaY = FLT_MAX;
+	}
+	else
+	{
+		float vy = (float)floorf(start.y);
+		float distToBoundaryY = (dir.y > 0) ? (vy + 1.0f - start.y) : (start.y - vy);
+		tMaxY = distToBoundaryY / fabsf(dir.y);
+		tDeltaY = 1.0f / fabsf(dir.y);
+	}
+	
+	if(dir.z == 0.0f)
+	{
+		tMaxZ = FLT_MAX;
+		tDeltaZ = FLT_MAX;
+	}
+	else
+	{
+		float vz = (float)floorf(start.z);
+		float distToBoundaryZ = (dir.z > 0) ? (vz + 1.0f - start.z) : (start.z - vz);
+		tMaxZ = distToBoundaryZ / fabsf(dir.z);
+		tDeltaZ = 1.0f / fabsf(dir.z);
+	}
+
+	int prevX = x, prevY = y, prevZ = z;
+	float t = 0.0f;
+
+	while(t <= maxDistance)
+	{
+		if(grid.inBounds(x, y, z))
+		{
+			if(!grid.isEmpty(x, y, z))
+			{
+				hit.currHit.x = x;
+				hit.currHit.y = y;
+				hit.currHit.z = z;
+
+				hit.prevHit.x = prevX;
+				hit.prevHit.y = prevY;
+				hit.prevHit.z = prevZ;
+
+				return true;
+			}
+		}
+
+		prevX = x; prevY = y; prevZ = z;
+
+		if(tMaxX < tMaxY)
+		{
+			if(tMaxX < tMaxZ)
+			{
+				x += stepX;
+				t = tMaxX;
+				tMaxX += tDeltaX;
+			}
+			else
+			{
+				z += stepZ;
+				t = tMaxZ;
+				tMaxZ += tDeltaZ;
+			}
+		}
+		else
+		{
+			if(tMaxY < tMaxZ)
+			{
+				y += stepY;
+				t = tMaxY;
+				tMaxY += tDeltaY;
+			}
+			else
+			{
+				z += stepZ;
+				t = tMaxZ;
+				tMaxZ += tDeltaZ;
+			}
+		}
+	}
+
+	return false;
+
 }
 
