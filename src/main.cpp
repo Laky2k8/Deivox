@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "raymath.h"
 
+
 #include <string>
 #include <iostream>
 #include <cmath>
@@ -51,10 +52,12 @@ int main()
 	Grid voxelGrid = Grid(16, 16, 16);
 
 
-	Tile groundTile; // default tile (fill it the way your Tile constructor expects)
+	Tile groundTile = Tile(YELLOW);
+	Tile seaTile = Tile(BLUE);
+
 	for (int x = 0; x < voxelGrid.getWidth(); ++x)
 		for (int z = 0; z < voxelGrid.getDepth(); ++z)
-			voxelGrid.setTile(x, 0, z, groundTile);
+			voxelGrid.setTile(x, 0, z, seaTile);
 
 
     const float PHYSICS_STEP = 0.1f; // seconds per physics update
@@ -84,9 +87,9 @@ int main()
 			{
 				std::cout << "Hit at: (" << hit.currHit.x << ", " << hit.currHit.y << ", " << hit.currHit.z << ")\n";
 
-				Tile tile;
+				
 
-				voxelGrid.setTile(hit.prevHit.x, hit.prevHit.y, hit.prevHit.z, tile);
+				voxelGrid.setTile(hit.prevHit.x, hit.prevHit.y, hit.prevHit.z, groundTile);
 				// hit.currHit is the first OCCUPIED voxel
 				// hit.prevHit is the actual empty tile we want to modify
 			}
@@ -103,14 +106,37 @@ int main()
 				{
 					for(int z = 0; z < voxelGrid.getDepth(); z++)
 					{
-						if(voxelGrid.inBounds(x, y - 1, z))
+						if(voxelGrid.inBounds(x, y - 1, z) && voxelGrid.isEmpty(x, y - 1, z) && !voxelGrid.isEmpty(x, y, z))
 						{
-							if(voxelGrid.isEmpty(x, y - 1, z) && !voxelGrid.isEmpty(x, y, z))
-							{
-								Tile tile;
-								voxelGrid.setEmpty(x, y, z);
-								voxelGrid.setTile(x, y - 1, z, tile);
-							}
+							
+							voxelGrid.setEmpty(x, y, z);
+							voxelGrid.setTile(x, y - 1, z, groundTile);
+						}
+
+						if(voxelGrid.inBounds(x - 1, y - 1, z) && voxelGrid.isEmpty(x - 1, y - 1, z) && !voxelGrid.isEmpty(x, y, z))
+						{
+							
+							voxelGrid.setEmpty(x, y, z);
+							voxelGrid.setTile(x - 1, y - 1, z, groundTile);
+						}
+						if(voxelGrid.inBounds(x + 1, y - 1, z) && voxelGrid.isEmpty(x + 1, y - 1, z) && !voxelGrid.isEmpty(x, y, z))
+						{
+							
+							voxelGrid.setEmpty(x, y - 1, z);
+							voxelGrid.setTile(x + 1, y - 1, z, groundTile);
+						}
+
+						if(voxelGrid.inBounds(x, y - 1, z - 1) && voxelGrid.isEmpty(x, y - 1, z - 1) && !voxelGrid.isEmpty(x, y, z))
+						{
+							
+							voxelGrid.setEmpty(x, y, z);
+							voxelGrid.setTile(x, y - 1, z - 1, groundTile);
+						}
+						if(voxelGrid.inBounds(x, y - 1, z + 1) && voxelGrid.isEmpty(x, y - 1, z + 1) && !voxelGrid.isEmpty(x, y, z))
+						{
+							
+							voxelGrid.setEmpty(x, y, z);
+							voxelGrid.setTile(x, y - 1, z + 1, groundTile);
 						}
 					}
 				}
@@ -149,17 +175,20 @@ int main()
 				{
 					if(!voxelGrid.isEmpty(x, y, z))
 					{
-						DrawCube((Vector3){x, y, z}, 1.0f, 1.0f, 1.0f, BLUE);
+						//DrawCube((Vector3){x, y, z}, 1.0f, 1.0f, 1.0f, voxelGrid.getTile(x, y, z).color);
+
+						Tile selectedTile = voxelGrid.getTile(x, y, z);
+
+						// draw cube with a slight luminance based on its position
+						DrawCube((Vector3){x, y, z}, 1.0f, 1.0f, 1.0f, (Color){ selectedTile.color.r - (unsigned char)(y * 10), selectedTile.color.g - (unsigned char)(y * 10), selectedTile.color.b - (unsigned char)(y * 10), 255 });
+
 						DrawCubeWires((Vector3){x, y, z}, 1.0f, 1.0f, 1.0f, DARKBLUE);
 					}
 				}
 			}
 		}
 
-
 		DrawRay(ray, MAROON);
-		DrawGrid(10, 1.0f);
-
 
 		EndMode3D();
 

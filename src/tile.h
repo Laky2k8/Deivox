@@ -6,8 +6,8 @@ class Tile
 	public:
 		Color color;
 
-		Tile()
+		Tile(Color color)
 		{
-			this->color = WHITE;
+			this->color = color;
 		}
 };

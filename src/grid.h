@@ -56,6 +56,14 @@ class Grid
 			grid[idx(x, y, z)] = tile;
 		}
 
+		Tile getTile(int x, int y, int z)
+		{
+			if(!inBounds(x, y, z)) return Tile(Color{255, 255, 255, 0});
+			if(grid[idx(x, y, z)] == std::nullopt) return Tile(Color{255, 255, 255, 0});
+
+			return grid[idx(x, y, z)].value();
+		}
+
 		void setEmpty(int x, int y, int z)
 		{
 			if(!inBounds(x, y, z)) return;
